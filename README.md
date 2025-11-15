@@ -8,9 +8,7 @@ This tool performs:
 - CVE lookup using the NVD API (with your own API key)  
 - Misconfiguration detection  
 - HTML report generation  
-
 ---
-
 ## Features
 
 ### Network & Port Scanning
