@@ -2,9 +2,26 @@ from datetime import datetime
 from html import escape
 
 
-def generate_html_report(target, open_tcp, open_udp, banners, cve_map, misconfigs, output_file):
+def generate_html_report(
+    target,
+    open_tcp,
+    open_udp,
+    banners,
+    cve_map,
+    misconfigs,
+    output_file,
+    os_guess="Unknown",
+    ssl_findings=None,
+    web_info=None,
+    extra_findings=None,
+    profile="quick",
+):
     print(f"[+] Generating HTML report: {output_file}")
     scanned_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    ssl_findings = ssl_findings or []
+    web_info = web_info or {}
+    extra_findings = extra_findings or []
 
     def esc(x):
         return escape(str(x))
@@ -23,7 +40,7 @@ def generate_html_report(target, open_tcp, open_udp, banners, cve_map, misconfig
       padding: 20px;
     }}
     .container {{
-      max-width: 1000px;
+      max-width: 1100px;
       margin: 0 auto;
       background: #111627;
       border-radius: 12px;
@@ -46,6 +63,9 @@ def generate_html_report(target, open_tcp, open_udp, banners, cve_map, misconfig
     }}
     th {{
       background: #1a2135;
+    }}
+    ul {{
+      font-size: 14px;
     }}
     .tag {{
       display: inline-block;
@@ -72,6 +92,8 @@ def generate_html_report(target, open_tcp, open_udp, banners, cve_map, misconfig
   <div class="container">
     <h1>Vulnerability Scan Report</h1>
     <p><strong>Target:</strong> {esc(target)}<br>
+       <strong>Profile:</strong> {esc(profile.upper())}<br>
+       <strong>Guessed OS:</strong> {esc(os_guess)}<br>
        <strong>Scanned at:</strong> {esc(scanned_at)}</p>
 
     <h2>Open TCP Ports</h2>
@@ -109,6 +131,31 @@ def generate_html_report(target, open_tcp, open_udp, banners, cve_map, misconfig
     html += """
     </ul>
 
+    <h2>Additional Findings (Web / SSL / Heuristics)</h2>
+    <ul>"""
+
+    if extra_findings:
+        for f in extra_findings:
+            html += f"<li>{esc(f)}</li>"
+    else:
+        html += "<li>No additional findings reported.</li>"
+
+    html += """
+    </ul>
+
+    <h2>Web Application Details</h2>"""
+
+    if not web_info:
+        html += "<p>No HTTP/HTTPS services detected or scanned.</p>"
+    else:
+        html += "<table><tr><th>Port</th><th>Title</th><th>Interesting Paths</th></tr>"
+        for port, info in web_info.items():
+            title = esc(info.get("title") or "")
+            paths = "<br>".join(esc(p) for p in info.get("interesting_paths", []))
+            html += f"<tr><td>{port}</td><td>{title}</td><td>{paths}</td></tr>"
+        html += "</table>"
+
+    html += """
     <h2>Potential CVEs (based on banners)</h2>"""
 
     if not cve_map:

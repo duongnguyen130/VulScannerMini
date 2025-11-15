@@ -6,6 +6,9 @@ TCP_TIMEOUT = 0.5
 MAX_THREADS = 100
 
 
+# -----------------------------
+# INTERNAL THREAD WORKER
+# -----------------------------
 def _tcp_worker(target, port_queue, results):
     while True:
         try:
@@ -20,24 +23,70 @@ def _tcp_worker(target, port_queue, results):
                     results["open_tcp"].append(port)
             except Exception:
                 pass
+
+        results["scanned"] += 1  # update progress
         port_queue.task_done()
 
 
+# -----------------------------
+# NORMAL TCP SCAN
+# -----------------------------
 def scan_tcp_ports(target: str, start_port: int = 1, end_port: int = 1024):
     print(f"[+] Scanning TCP ports {start_port}-{end_port} on {target}...")
+
     port_queue = queue.Queue()
-    results = {"open_tcp": []}
+    total_ports = end_port - start_port + 1
+
+    results = {"open_tcp": [], "scanned": 0}
 
     for port in range(start_port, end_port + 1):
         port_queue.put(port)
 
-    threads = []
-    num_threads = min(MAX_THREADS, end_port - start_port + 1)
+    num_threads = min(MAX_THREADS, total_ports)
     for _ in range(num_threads):
         t = threading.Thread(target=_tcp_worker, args=(target, port_queue, results))
         t.daemon = True
         t.start()
-        threads.append(t)
 
     port_queue.join()
     return sorted(results["open_tcp"])
+
+
+# -----------------------------
+# STREAMING TCP SCAN (REAL-TIME PROGRESS)
+# -----------------------------
+def scan_tcp_ports_streamed(target: str, start_port: int, end_port: int):
+    total_ports = end_port - start_port + 1
+
+    port_queue = queue.Queue()
+    results = {"open_tcp": [], "scanned": 0}
+
+    for port in range(start_port, end_port + 1):
+        port_queue.put(port)
+
+    num_threads = min(MAX_THREADS, total_ports)
+
+    # Start threads
+    for _ in range(num_threads):
+        t = threading.Thread(target=_tcp_worker, args=(target, port_queue, results))
+        t.daemon = True
+        t.start()
+
+    # Stream progress
+    last_percent = -1
+    while results["scanned"] < total_ports:
+        percent = int((results["scanned"] * 100) / total_ports)
+        if percent != last_percent:
+            yield {
+                "phase": "tcp",
+                "percent": percent
+            }
+            last_percent = percent
+
+    port_queue.join()
+
+    yield {
+        "phase": "tcp_done",
+        "percent": 100,
+        "open_tcp": sorted(results["open_tcp"]),
+    }

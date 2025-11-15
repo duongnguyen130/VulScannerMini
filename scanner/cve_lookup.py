@@ -1,7 +1,7 @@
 import requests
 
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
-NVD_API_KEY = None #add your own key  ^.^
+NVD_API_KEY = "x" #add your own key  ^.^
 
 
 def lookup_cves_for_banner(banner: str):

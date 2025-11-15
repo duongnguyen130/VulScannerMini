@@ -7,28 +7,63 @@
 </head>
 <body>
 
+<!-- ================================
+     GLOBAL PROGRESS BAR
+================================ -->
+<div id="globalProgressContainer" class="progress-container hidden">
+    <div id="globalProgressBar" class="progress-bar">
+        <span id="globalProgressPercent" class="progress-percent">0%</span>
+    </div>
+</div>
+
+<p id="globalProgressStatus" class="progress-status hidden">Preparing scan...</p>
+
+
+<!-- ================================
+     MAIN SCANNER UI
+================================ -->
 <div class="container">
+
     <h1 class="title">Vulnerability Scanner</h1>
-    <p class="subtitle">Scan a host for open ports, banners, CVEs, and misconfigurations.</p>
+    <p class="subtitle">Scan any host for open ports, banners, CVEs, and misconfigurations.</p>
 
     <div class="card">
-        <label for="target">Target IP / Domain</label>
-        <input id="target" placeholder="e.g., 192.168.1.10">
 
-        <label>TCP Port Range</label>
-        <div class="range">
-            <input id="tcp_start" value="1">
-            <span>to</span>
-            <input id="tcp_end" value="1024">
+        <!-- Target -->
+        <label class="label">Target IP / Domain</label>
+        <input id="target" class="input" placeholder="e.g., 192.168.1.10">
+
+        <!-- Scan Profile -->
+        <label class="label">Scan Profile</label>
+        <select id="profile" class="dropdown">
+            <option value="quick">Quick</option>
+            <option value="deep">Deep</option>
+            <option value="oscp">Advanced</option>
+            <option value="custom">Custom (enter port range)</option>
+        </select>
+
+        <!-- Custom Range -->
+        <div id="rangeRow" class="range-row hidden">
+            <label class="label">TCP Port Range</label>
+            <div class="range">
+                <input id="tcp_start" class="input small" value="1">
+                <span class="range-sep">to</span>
+                <input id="tcp_end" class="input small" value="1024">
+            </div>
+            <p class="hint">Only used when “Custom” is selected.</p>
         </div>
 
-        <button id="scanBtn">Start Scan</button>
+        <!-- Error Display -->
         <p id="error" class="error hidden"></p>
+
+        <!-- Scan Button -->
+        <button id="scanBtn" class="scan-btn">Start Scan</button>
+
     </div>
 
-    <div id="loader" class="loader hidden"></div>
-
+    <!-- RESULTS OUTPUT -->
     <div id="results"></div>
+
 </div>
 
 <script src="/static/script.js"></script>
